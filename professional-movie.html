@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Movie Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        .movie-card { background: #111; border-radius: 10px; overflow: hidden; transition: 0.3s; }
+        .movie-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(234, 179, 8, 0.3); }
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <div class="p-4 bg-gray-900 border-b border-gray-800 text-center">
+        <h1 class="text-xl font-bold text-yellow-500 uppercase italic">Premium Streaming</h1>
+    </div>
+
+    <div id="player-section" class="hidden p-2 bg-black">
+        <video id="player" playsinline controls></video>
+        <h2 id="video-title" class="p-3 text-lg font-bold border-b border-gray-800"></h2>
+    </div>
+
+    <div class="container mx-auto p-4">
+        <h3 class="text-md font-bold text-gray-400 mb-4 tracking-widest uppercase">Recommended For You</h3>
+        <div id="movie-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center">
+            </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7T7WZg0fLGTw6ShqDHjOva-btNF6O1AM",
+            authDomain: "seafood-oder.firebaseapp.com",
+            databaseURL: "https://seafood-oder-default-rtdb.firebaseio.com",
+            projectId: "seafood-oder",
+            storageBucket: "seafood-oder.firebasestorage.app",
+            messagingSenderId: "428949391732",
+            appId: "1:428949391732:web:8c0ab80a98d241b865c421",
+            measurementId: "G-2E56Q73M1E"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const player = new Plyr('#player');
+
+        async function fetchMovies() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "movies"));
+                const grid = document.getElementById('movie-grid');
+                grid.innerHTML = '';
+                
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    
+                    // Firestore ထဲမှာ Space (ဟာကွက်) ပါနေခဲ့ရင် အကုန်လုံးကို အလိုအလျောက် ရှင်းပေးမယ့် အပိုင်း
+                    const movie = {
+                        title: d.title || d['title '] || d['Title'] || d['Title '] || "Untitled Movie",
+                        poster: d.poster || d['poster '] || d['Poster'] || d['Poster '] || "",
+                        url: d.url || d['url '] || d['Url'] || d['Url '] || ""
+                    };
+
+                    const card = document.createElement('div');
+                    card.className = "movie-card cursor-pointer";
+                    card.innerHTML = `
+                        <div class="h-44 overflow-hidden relative">
+                            <img src="${movie.poster}" class="w-full h-full object-cover">
+                            <div class="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] px-1 font-bold rounded">HD</div>
+                        </div>
+                        <div class="p-2 text-sm font-semibold truncate">${movie.title}</div>
+                    `;
+                    
+                    card.onclick = () => {
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                        document.getElementById('player-section').classList.remove('hidden');
+                        document.getElementById('video-title').innerText = movie.title;
+                        player.source = {
+                            type: 'video',
+                            sources: [{ src: movie.url, type: 'video/mp4' }]
+                        };
+                        player.play();
+                    };
+                    grid.appendChild(card);
+                });
+            } catch (e) {
+                console.error("Firebase Error: ", e);
+            }
+        }
+        fetchMovies();
+    </script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+</body>
+</html>
